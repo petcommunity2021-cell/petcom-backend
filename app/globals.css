@@ -1,0 +1,198 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #fbfaf7;
+  --color-paper: #ffffff;
+  --color-ink: #12211f;
+  --color-ink-soft: #3d4f4b;
+  --color-muted: #6b7b77;
+  --color-line: #e2dfd6;
+  --color-teal: #0f766e;
+  --color-teal-soft: #e6f4f1;
+  --color-teal-ink: #0b3f3a;
+  --color-accent: #c2410c;
+  --color-accent-soft: #fdede4;
+  --color-good: #17663a;
+  --color-good-soft: #e7f4ec;
+  --color-warn: #8a5a00;
+  --color-warn-soft: #fdf3dc;
+  --color-bad: #b42318;
+  --color-bad-soft: #fdecea;
+
+  --radius-card: 18px;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family:
+    "Nunito Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+.display {
+  font-family:
+    "Varela Round", ui-rounded, "Segoe UI", system-ui, -apple-system, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* One focus style everywhere, including the scanner. Never removed. */
+:focus-visible {
+  outline: 2px solid var(--color-teal);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.card {
+  background: var(--color-paper);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  box-shadow: 0 1px 2px rgba(18, 33, 31, 0.04), 0 12px 28px -20px rgba(18, 33, 31, 0.25);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.7rem 1.15rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: transform 120ms ease, background-color 120ms ease;
+  border: 1px solid transparent;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+/*
+ * A disabled button must look disabled. `pointer-events: none` also stops the
+ * :hover rules below from painting a live-looking colour over it — the
+ * "you cannot approve your own sale" button is the one that matters.
+ */
+.btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none;
+}
+
+.btn-primary {
+  background: var(--color-teal);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--color-teal-ink);
+}
+
+.btn-accent {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.btn-accent:hover {
+  background: #9a320a;
+}
+
+.btn-ghost {
+  background: var(--color-paper);
+  border-color: var(--color-line);
+  color: var(--color-ink);
+}
+
+.btn-ghost:hover {
+  background: #f4f2ec;
+}
+
+.btn-danger {
+  background: var(--color-bad-soft);
+  color: var(--color-bad);
+  border-color: #f3c9c4;
+}
+
+.field {
+  width: 100%;
+  min-height: 46px;
+  padding: 0.6rem 0.8rem;
+  border-radius: 11px;
+  border: 1px solid var(--color-line);
+  background: #fff;
+  font-size: 0.95rem;
+  color: var(--color-ink);
+}
+
+.field:focus {
+  border-color: var(--color-teal);
+}
+
+.label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  margin-bottom: 0.35rem;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.pill-teal {
+  background: var(--color-teal-soft);
+  color: var(--color-teal-ink);
+  border-color: #bfe3dc;
+}
+.pill-good {
+  background: var(--color-good-soft);
+  color: var(--color-good);
+  border-color: #bfe0cc;
+}
+.pill-warn {
+  background: var(--color-warn-soft);
+  color: var(--color-warn);
+  border-color: #ecd9a6;
+}
+.pill-bad {
+  background: var(--color-bad-soft);
+  color: var(--color-bad);
+  border-color: #f3c9c4;
+}
+.pill-muted {
+  background: #f4f2ec;
+  color: var(--color-ink-soft);
+  border-color: var(--color-line);
+}

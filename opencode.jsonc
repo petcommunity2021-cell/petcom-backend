@@ -1,0 +1,15 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "servers": {
+      "nocodb-petcom": {
+        "type": "remote",
+        "url": "http://localhost:8080/mcp/ncd9flwpnci3ln6a",
+        "oauth": false,
+        "headers": {
+          "x-api-key": "{file:./.nocodb-token}"
+        }
+      }
+    }
+  }
+}

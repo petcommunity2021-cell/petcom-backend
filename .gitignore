@@ -1,0 +1,19 @@
+# Local secrets — never commit
+.env
+.env.*
+!.env.example
+.nocodb-token
+
+# OpenCode local state
+node_modules/
+.opencode/
+
+# Next.js build output
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Playwright MCP walkthrough artifacts (browser profiles, traces, screenshots)
+.playwright-mcp/
+/*.png
