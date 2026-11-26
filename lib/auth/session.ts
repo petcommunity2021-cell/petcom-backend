@@ -14,15 +14,17 @@ export type Session = {
   exp: number; // unix ms
 };
 
-export const SESSION_COOKIE = "petcom_session";
+export const SESSION_COOKIE = "petcom_staff_session";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 2; // two days at the venue
 
 function secret(): string {
-  return process.env.SESSION_SECRET ?? "insecure-dev-secret-please-set-SESSION_SECRET";
+  const value = process.env.SESSION_SECRET;
+  if (!value && process.env.NODE_ENV === "production") throw new Error("SESSION_SECRET is required.");
+  return value ?? "insecure-dev-secret-please-set-SESSION_SECRET";
 }
 
 function sign(payload: string): string {
-  return createHmac("sha256", secret()).update(payload).digest("base64url");
+  return createHmac("sha256", secret()).update("staff-password-v1:").update(payload).digest("base64url");
 }
 
 export function serializeSession(session: Session): string {
