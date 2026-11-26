@@ -4,17 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CheckInOutcome } from "@/lib/domain/checkin";
 
-type DetectedBarcode = { rawValue: string };
-type BarcodeDetectorLike = {
-  detect(source: CanvasImageSource): Promise<DetectedBarcode[]>;
-};
-
-declare global {
-  interface Window {
-    BarcodeDetector?: new (options?: { formats?: string[] }) => BarcodeDetectorLike;
-  }
-}
-
 const VERDICT: Record<
   CheckInOutcome["result"],
   { title: string; tone: string; sign: string }
@@ -44,66 +33,88 @@ export function ScanConsole({ staffName }: { staffName: string }) {
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const detectorRef = useRef<BarcodeDetectorLike | null>(null);
+  const cameraRun = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
-    setCameraSupported(Boolean(window.BarcodeDetector));
-    return () => stopCamera();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  function stopCamera() {
-    if (timerRef.current) clearInterval(timerRef.current);
+  function releaseCamera() {
+    cameraRun.current += 1;
+    if (timerRef.current !== null) clearInterval(timerRef.current);
     timerRef.current = null;
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
+  }
+
+  useEffect(() => {
+    setCameraSupported(Boolean(navigator.mediaDevices?.getUserMedia));
+    return releaseCamera;
+  }, []);
+
+  function stopCamera() {
+    releaseCamera();
     setCamera("off");
   }
 
   async function startCamera() {
-    const Detector = window.BarcodeDetector;
-    if (!Detector) return;
+    const run = ++cameraRun.current;
+    setError(null);
     setCamera("starting");
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
+        video: { facingMode: { ideal: "environment" } },
         audio: false,
       });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+      if (run !== cameraRun.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
       }
-      detectorRef.current = new Detector({ formats: ["qr_code"] });
+      streamRef.current = stream;
+
+      const { default: decodeQr } = await import("jsqr");
+      if (run !== cameraRun.current) return;
+      const video = videoRef.current;
+      if (!video) throw new Error("Camera preview unavailable");
+
+      video.srcObject = stream;
+      await video.play();
+      if (run !== cameraRun.current) return;
+
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      if (!context) throw new Error("QR reader unavailable");
       setCamera("on");
 
-      let scanning = false;
-      timerRef.current = setInterval(async () => {
-        if (scanning || !videoRef.current || !detectorRef.current) return;
-        scanning = true;
-        try {
-          const codes = await detectorRef.current.detect(videoRef.current);
-          const value = codes[0]?.rawValue;
-          if (value) {
-            setToken(value);
-            stopCamera();
-            await submit(value);
-          }
-        } catch {
-          // A dropped frame is not an error worth showing.
-        } finally {
-          scanning = false;
+      timerRef.current = setInterval(() => {
+        if (video.readyState < 2 || !video.videoWidth || !video.videoHeight) return;
+        const scale = Math.min(1, 720 / Math.max(video.videoWidth, video.videoHeight));
+        const width = Math.max(1, Math.round(video.videoWidth * scale));
+        const height = Math.max(1, Math.round(video.videoHeight * scale));
+        if (canvas.width !== width || canvas.height !== height) {
+          canvas.width = width;
+          canvas.height = height;
         }
-      }, 450);
-    } catch {
-      setCamera("off");
-      setError("Camera permission was refused. Type or paste the code instead.");
+        context.drawImage(video, 0, 0, width, height);
+        const frame = context.getImageData(0, 0, width, height);
+        const value = decodeQr(frame.data, width, height, { inversionAttempts: "dontInvert" })?.data;
+        if (value) {
+          setToken(value);
+          stopCamera();
+          void submit(value);
+        }
+      }, 250);
+    } catch (cause) {
+      if (run !== cameraRun.current) return;
+      stopCamera();
+      setError(cause instanceof DOMException && cause.name === "NotAllowedError"
+        ? "Camera access was denied. Allow it in your browser’s site settings, or paste the ticket link."
+        : "Could not start the camera. Try again or paste the ticket link.");
     }
   }
 
   async function submit(value: string) {
     if (!value.trim() || busy) return;
+    stopCamera();
     setBusy(true);
     setError(null);
     try {
@@ -166,11 +177,11 @@ export function ScanConsole({ staffName }: { staffName: string }) {
                 type="button"
                 className="btn btn-ghost"
                 onClick={startCamera}
-                disabled={!cameraSupported}
+                disabled={!cameraSupported || busy}
                 title={
                   cameraSupported
                     ? "Scan with the camera"
-                    : "This browser has no built-in QR scanner — paste the code instead"
+                    : "Camera access is unavailable — paste the ticket link instead"
                 }
               >
                 Camera
@@ -185,7 +196,7 @@ export function ScanConsole({ staffName }: { staffName: string }) {
 
         {camera !== "off" ? (
           <div className="mt-4 overflow-hidden rounded-xl border border-line bg-black">
-            <video ref={videoRef} playsInline muted className="h-56 w-full object-cover" />
+            <video ref={videoRef} playsInline muted autoPlay className="h-56 w-full object-cover" />
             <p className="px-3 py-2 text-center text-xs text-white/70">
               {camera === "starting" ? "Starting camera…" : "Point at the QR code"}
             </p>
