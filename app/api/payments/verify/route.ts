@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     if (payment.order_id !== providerOrderId) {
       return NextResponse.json({ error: "Payment/order mismatch." }, { status: 409 });
     }
-    if (payment.status !== "captured" && payment.status !== "authorized") {
+    if (payment.status !== "captured") {
       return NextResponse.json(
         { error: `Payment is ${payment.status}, not captured.` },
         { status: 409 },
