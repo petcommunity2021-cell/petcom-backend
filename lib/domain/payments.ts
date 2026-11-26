@@ -151,7 +151,7 @@ async function queueTicketMessages(
 
 async function seatsLeftForOrder(tx: Tx, eventId: number, orderId: number) {
   const result = await tx.execute(sql`
-    select (e.capacity - coalesce(count(t.id), 0))::int as left
+    select (case when e.capacity = 0 then 2147483647 else e.capacity - coalesce(count(t.id), 0) end)::int as left
     from events e
     left join tickets t on t.event_id = e.id
     left join orders o on o.id = t.order_id

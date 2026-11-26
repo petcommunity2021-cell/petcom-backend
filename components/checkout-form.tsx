@@ -11,7 +11,7 @@ export type TierOption = {
   id: number;
   name: string;
   pricePaise: number;
-  left: number;
+  left: number | null;
   perOrderLimit: number;
   includesPet: boolean;
 };
@@ -28,12 +28,12 @@ export function CheckoutForm({
     { error: null },
   );
 
-  const firstOpen = tiers.find((t) => t.left > 0) ?? tiers[0];
+  const firstOpen = tiers.find((t) => t.left === null || t.left > 0) ?? tiers[0];
   const [tierId, setTierId] = useState<number>(firstOpen?.id ?? 0);
   const [quantity, setQuantity] = useState(1);
 
   const tier = tiers.find((t) => t.id === tierId) ?? firstOpen;
-  const maxQuantity = Math.max(1, Math.min(tier?.left ?? 1, tier?.perOrderLimit ?? 1));
+  const maxQuantity = Math.max(1, Math.min(tier?.left ?? tier?.perOrderLimit ?? 1, tier?.perOrderLimit ?? 1));
   const total = (tier?.pricePaise ?? 0) * quantity;
   const soldOut = !tier || tier.left === 0;
 
@@ -80,8 +80,8 @@ export function CheckoutForm({
                     {disabled
                       ? "Sold out"
                       : option.includesPet
-                        ? "Includes one pet · " + option.left + " left"
-                        : option.left + " left"}
+                        ? "Includes one pet · " + (option.left === null ? "Available" : option.left + " left")
+                        : (option.left === null ? "Available" : option.left + " left")}
                   </span>
                 </span>
               </span>

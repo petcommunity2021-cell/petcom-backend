@@ -48,13 +48,13 @@ export function EventForm() {
 
         <div>
           <label className="label" htmlFor="capacity">
-            Total seats
+            Total seats (0 for unlimited)
           </label>
           <input
             id="capacity"
             name="capacity"
             type="number"
-            min={1}
+            min={0}
             defaultValue={50}
             className="field"
             required
@@ -103,13 +103,13 @@ export function EventForm() {
           </div>
           <div>
             <label className="label" htmlFor="tierQuantity">
-              Seats
+              Seats (0 for unlimited)
             </label>
             <input
               id="tierQuantity"
               name="tierQuantity"
               type="number"
-              min={1}
+              min={0}
               defaultValue={50}
               className="field"
             />
@@ -127,8 +127,8 @@ export function EventForm() {
               <input name={`priceRupees${index}`} className="field" type="number" min={0} step={1} />
             </label>
             <label className="label">
-              Seats
-              <input name={`tierQuantity${index}`} className="field" type="number" min={1} />
+              Seats (0 for unlimited)
+              <input name={`tierQuantity${index}`} className="field" type="number" min={0} />
             </label>
           </fieldset>
         ))}

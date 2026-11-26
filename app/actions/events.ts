@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db/client";
 import { events, ticketTypes } from "@/lib/db/schema";
+import { UNLIMITED_TIER_QUANTITY } from "@/lib/domain/inventory";
 import { writeAudit } from "@/lib/domain/audit";
 import { requireSession } from "@/lib/auth/session";
 
@@ -54,10 +55,10 @@ export async function createEvent(
   if (!title) return { error: "Give the event a name." };
   if (!startsAt) return { error: "Pick the date and time it starts." };
   if (endsInput && (!endsAt || endsAt <= startsAt)) return { error: "The end time must be after the start time." };
-  if (!Number.isSafeInteger(capacity) || capacity < 1) return { error: "Capacity must be at least 1." };
+  if (!Number.isSafeInteger(capacity) || capacity < 0 || capacity >= UNLIMITED_TIER_QUANTITY) return { error: "Enter a valid capacity. Use 0 for unlimited." };
   if (!Number.isFinite(priceRupees) || priceRupees < 0) return { error: "Price cannot be negative." };
-  if (!Number.isSafeInteger(tierQuantity) || tierQuantity < 1 || tierQuantity > capacity) {
-    return { error: "The first tier needs between one seat and the event capacity." };
+  if (!Number.isSafeInteger(tierQuantity) || tierQuantity < 0 || tierQuantity >= UNLIMITED_TIER_QUANTITY || (capacity > 0 && tierQuantity > capacity)) {
+    return { error: "Enter a valid seat limit for the first tier. Use 0 for unlimited." };
   }
 
   const tiers = [{ name: tierName, pricePaise: Math.round(priceRupees * 100), quantity: tierQuantity }];
@@ -69,7 +70,7 @@ export async function createEvent(
     const pricePaise = Math.round(Number(price) * 100);
     const quantity = Number(seats);
     if (!name || !price || !Number.isSafeInteger(pricePaise) || pricePaise < 0 ||
-        !Number.isSafeInteger(quantity) || quantity < 1 || quantity > capacity) {
+        !Number.isSafeInteger(quantity) || quantity < 0 || quantity >= UNLIMITED_TIER_QUANTITY || (capacity > 0 && quantity > capacity)) {
       return { error: `Enter a name, price and valid seat count for ticket tier ${index}.` };
     }
     tiers.push({ name, pricePaise, quantity });
@@ -107,7 +108,8 @@ export async function createEvent(
       await tx.insert(ticketTypes).values(tiers.map((tier) => ({
         eventId: event.id,
         ...tier,
-        perOrderLimit: Math.min(10, tier.quantity),
+        quantity: tier.quantity || UNLIMITED_TIER_QUANTITY,
+        perOrderLimit: Math.min(10, tier.quantity || 10),
       })));
 
       await writeAudit(tx, {

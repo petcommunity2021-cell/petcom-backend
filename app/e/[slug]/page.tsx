@@ -25,14 +25,14 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
     id: tier.id,
     name: tier.name,
     pricePaise: tier.pricePaise,
-    left: left.get(tier.id) ?? tier.quantity,
+    left: left.get(tier.id) ?? (left.has(tier.id) ? null : tier.quantity),
     perOrderLimit: tier.perOrderLimit,
     includesPet: tier.includesPet,
   }));
 
-  const open = options.some((o) => o.left > 0);
+  const open = options.some((o) => o.left === null || o.left > 0);
   const sellable = event.status === "on_sale" || event.status === "scheduled";
-  const totalLeft = options.reduce((sum, option) => sum + option.left, 0);
+  const totalLeft = options.reduce((sum, option) => sum + (option.left ?? 0), 0);
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -49,7 +49,7 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <StatusPill status={event.status} />
-              {totalLeft > 0 && totalLeft <= 10 ? (
+              {options.every((option) => option.left !== null) && totalLeft > 0 && totalLeft <= 10 ? (
                 <span className="pill pill-warn">{totalLeft} left</span>
               ) : null}
             </div>

@@ -32,7 +32,7 @@ export default async function SellPage() {
         eventId: event.id,
         name: tier.name,
         pricePaise: tier.pricePaise,
-        left: left.get(tier.id) ?? tier.quantity,
+        left: left.get(tier.id) ?? (left.has(tier.id) ? null : tier.quantity),
         perOrderLimit: tier.perOrderLimit,
       })),
     });

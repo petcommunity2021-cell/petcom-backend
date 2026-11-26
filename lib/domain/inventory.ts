@@ -114,7 +114,7 @@ export async function createHold(input: HoldInput): Promise<HoldResult> {
 
     const tierTaken = await seatsTaken(tx, eq(tickets.ticketTypeId, tier.id), now);
     const tierLeft = tier.quantity - tierTaken;
-    if (input.quantity > tierLeft) {
+    if (tier.quantity !== UNLIMITED_TIER_QUANTITY && input.quantity > tierLeft) {
       throw new DomainError(
         "sold_out",
         tierLeft === 0
@@ -198,11 +198,14 @@ export async function expireStaleHolds(now = new Date()) {
   return { expiredOnline: expiredSales.length };
 }
 
+// Reserved value for unlimited tiers. Existing zero-quantity tiers stay sold out.
+export const UNLIMITED_TIER_QUANTITY = 2_147_483_647;
+
 export type Availability = {
   tierId: number;
   quantity: number;
   taken: number;
-  left: number;
+  left: number | null;
 };
 
 export async function availabilityFor(eventId: number, now = new Date()) {
@@ -228,7 +231,7 @@ export async function availabilityFor(eventId: number, now = new Date()) {
     tierId: r.tierId,
     quantity: r.quantity,
     taken: r.taken,
-    left: Math.max(r.quantity - r.taken, 0),
+    left: r.quantity === UNLIMITED_TIER_QUANTITY ? null : Math.max(r.quantity - r.taken, 0),
   }));
 }
 

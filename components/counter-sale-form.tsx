@@ -12,7 +12,7 @@ export type SaleTier = {
   eventId: number;
   name: string;
   pricePaise: number;
-  left: number;
+  left: number | null;
   perOrderLimit: number;
 };
 
@@ -56,16 +56,16 @@ export function CounterSaleForm({ events }: { events: SaleEvent[] }) {
     { error: null },
   );
 
-  const firstEvent = events.find((e) => e.tiers.some((t) => t.left > 0)) ?? events[0];
+  const firstEvent = events.find((e) => e.tiers.some((t) => t.left === null || t.left > 0)) ?? events[0];
   const [eventId, setEventId] = useState(firstEvent?.id ?? 0);
   const event = events.find((e) => e.id === eventId) ?? firstEvent;
-  const openTiers = event?.tiers.filter((t) => t.left > 0) ?? [];
+  const openTiers = event?.tiers.filter((t) => t.left === null || t.left > 0) ?? [];
   const [tierId, setTierId] = useState(openTiers[0]?.id ?? 0);
   const tier = event?.tiers.find((t) => t.id === tierId) ?? openTiers[0];
   const [quantity, setQuantity] = useState(1);
   const [mode, setMode] = useState<(typeof MODES)[number]["value"]>("cash");
 
-  const maxQuantity = Math.max(1, Math.min(tier?.left ?? 1, tier?.perOrderLimit ?? 1));
+  const maxQuantity = Math.max(1, Math.min(tier?.left ?? tier?.perOrderLimit ?? 1, tier?.perOrderLimit ?? 1));
   const total = (tier?.pricePaise ?? 0) * quantity;
   const needsApproval = mode === "cash" || mode === "comp";
 
@@ -102,7 +102,7 @@ export function CounterSaleForm({ events }: { events: SaleEvent[] }) {
               onChange={(e) => {
                 const next = events.find((x) => x.id === Number(e.target.value));
                 setEventId(Number(e.target.value));
-                const firstOpenTier = next?.tiers.find((t) => t.left > 0) ?? next?.tiers[0];
+                const firstOpenTier = next?.tiers.find((t) => t.left === null || t.left > 0) ?? next?.tiers[0];
                 setTierId(firstOpenTier?.id ?? 0);
                 setQuantity(1);
               }}
@@ -151,7 +151,7 @@ export function CounterSaleForm({ events }: { events: SaleEvent[] }) {
                   />
                   <span className="text-sm font-bold">{option.name}</span>
                   <span className="text-xs text-muted">
-                    {disabled ? "sold out" : `${option.left} left`}
+                    {disabled ? "sold out" : option.left === null ? "Available" : `${option.left} left`}
                   </span>
                 </span>
                 <span className="text-sm font-bold tabular-nums">
