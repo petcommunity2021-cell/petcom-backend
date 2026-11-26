@@ -49,6 +49,7 @@ export async function startCheckout(
   }
 
   let orderId: number;
+  let freeTicket: string | undefined;
   try {
     const hold = await createHold({
       eventId,
@@ -57,12 +58,22 @@ export async function startCheckout(
       customer: { name, phone, email, utm: readUtm(formData), consentMarketing: consent },
     });
     orderId = hold.orderId;
+    if (hold.totalPaise === 0) {
+      const result = await markPaid(orderId, {
+        providerPaymentId: `free_${orderId}`,
+        amountPaise: 0,
+        method: "free",
+        raw: { source: "free_checkout" },
+      });
+      freeTicket = result.ticketTokens[0];
+    }
   } catch (error) {
     if (error instanceof DomainError) return { error: error.message };
     console.error("checkout failed", error);
     return { error: "Something went wrong holding your seats. Please try again." };
   }
 
+  if (freeTicket) redirect(`/ticket/${freeTicket}`);
   redirect(`/checkout/${orderId}`);
 }
 
@@ -72,6 +83,7 @@ export async function startCheckout(
  * a real webhook, so there is only ever one path that mints a QR code.
  */
 export async function payWithMockGateway(formData: FormData) {
+  if (process.env.PAYMENTS_MODE === "razorpay") redirect("/");
   const orderId = Number(formData.get("orderId"));
   if (!Number.isFinite(orderId)) redirect("/");
 
