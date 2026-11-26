@@ -35,6 +35,11 @@ export function EventForm() {
         </div>
 
         <div>
+          <label className="label" htmlFor="endsAt">Ends (IST)</label>
+          <input id="endsAt" name="endsAt" type="datetime-local" className="field" />
+        </div>
+
+        <div>
           <label className="label" htmlFor="venueName">
             Venue
           </label>
@@ -110,6 +115,23 @@ export function EventForm() {
             />
           </div>
         </div>
+        {[2, 3].map((index) => (
+          <fieldset key={index} className="grid grid-cols-2 gap-3 border-t border-line pt-3 sm:col-span-2">
+            <legend className="text-xs font-bold">Ticket tier {index} (optional)</legend>
+            <label className="label col-span-2">
+              Tier name
+              <input name={`tierName${index}`} className="field" />
+            </label>
+            <label className="label">
+              Price ₹
+              <input name={`priceRupees${index}`} className="field" type="number" min={0} step={1} />
+            </label>
+            <label className="label">
+              Seats
+              <input name={`tierQuantity${index}`} className="field" type="number" min={1} />
+            </label>
+          </fieldset>
+        ))}
       </div>
 
       {state.error ? (
