@@ -44,6 +44,8 @@ export async function createEvent(
   const venueName = String(formData.get("venueName") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const startsAt = istToUtc(String(formData.get("startsAt") ?? ""));
+  const endsInput = String(formData.get("endsAt") ?? "");
+  const endsAt = istToUtc(endsInput);
   const capacity = Number(formData.get("capacity") ?? 0);
   const tierName = String(formData.get("tierName") ?? "").trim() || "General";
   const priceRupees = Number(formData.get("priceRupees") ?? 0);
@@ -51,10 +53,26 @@ export async function createEvent(
 
   if (!title) return { error: "Give the event a name." };
   if (!startsAt) return { error: "Pick the date and time it starts." };
-  if (!Number.isFinite(capacity) || capacity < 1) return { error: "Capacity must be at least 1." };
+  if (endsInput && (!endsAt || endsAt <= startsAt)) return { error: "The end time must be after the start time." };
+  if (!Number.isSafeInteger(capacity) || capacity < 1) return { error: "Capacity must be at least 1." };
   if (!Number.isFinite(priceRupees) || priceRupees < 0) return { error: "Price cannot be negative." };
-  if (!Number.isFinite(tierQuantity) || tierQuantity < 1) {
-    return { error: "The first ticket tier needs at least one seat." };
+  if (!Number.isSafeInteger(tierQuantity) || tierQuantity < 1 || tierQuantity > capacity) {
+    return { error: "The first tier needs between one seat and the event capacity." };
+  }
+
+  const tiers = [{ name: tierName, pricePaise: Math.round(priceRupees * 100), quantity: tierQuantity }];
+  for (const index of [2, 3]) {
+    const name = String(formData.get(`tierName${index}`) ?? "").trim();
+    const price = String(formData.get(`priceRupees${index}`) ?? "").trim();
+    const seats = String(formData.get(`tierQuantity${index}`) ?? "").trim();
+    if (!name && !price && !seats) continue;
+    const pricePaise = Math.round(Number(price) * 100);
+    const quantity = Number(seats);
+    if (!name || !price || !Number.isSafeInteger(pricePaise) || pricePaise < 0 ||
+        !Number.isSafeInteger(quantity) || quantity < 1 || quantity > capacity) {
+      return { error: `Enter a name, price and valid seat count for ticket tier ${index}.` };
+    }
+    tiers.push({ name, pricePaise, quantity });
   }
 
   const base = slugify(title) || "event";
@@ -80,18 +98,17 @@ export async function createEvent(
           description,
           venueName,
           startsAt,
+          endsAt,
           capacity,
           status: "draft",
         })
         .returning();
 
-      await tx.insert(ticketTypes).values({
+      await tx.insert(ticketTypes).values(tiers.map((tier) => ({
         eventId: event.id,
-        name: tierName,
-        pricePaise: Math.round(priceRupees * 100),
-        quantity: tierQuantity,
-        perOrderLimit: Math.min(10, tierQuantity),
-      });
+        ...tier,
+        perOrderLimit: Math.min(10, tier.quantity),
+      })));
 
       await writeAudit(tx, {
         staffId: session.staffId,
