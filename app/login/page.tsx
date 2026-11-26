@@ -10,7 +10,8 @@ export const metadata = { title: "Staff sign in" };
 
 export default async function LoginPage() {
   const session = await getSession();
-  if (session) redirect(session.role === "scanner" ? "/scan" : "/admin");
+  if (session?.role === "owner") redirect("/admin");
+  if (session) redirect(session.role === "sales" ? "/sell" : "/scan");
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -21,20 +22,11 @@ export default async function LoginPage() {
           <Wordmark />
           <h1 className="mt-4 text-2xl font-bold">Sign in to the desk</h1>
           <p className="mt-1 text-sm text-ink-soft">
-            Owner, sales and scanner accounts. No password to forget — a six-digit code does it.
+            Enter your staff username and password.
           </p>
         </div>
 
         <LoginForm />
-
-        <div className="mt-5 rounded-xl border border-line bg-paper/70 p-4 text-xs leading-relaxed text-muted">
-          <p className="font-bold text-ink-soft">Demo accounts (after `npm run db:seed`)</p>
-          <ul className="mt-1.5 space-y-0.5 font-mono">
-            <li>owner@petcom.in · owner (approves cash)</li>
-            <li>seller@petcom.in · sales (counter, scanner)</li>
-            <li>scanner@petcom.in · scanner (door only)</li>
-          </ul>
-        </div>
 
         <p className="mt-6 text-center text-xs text-muted">
           <Link href="/" className="font-bold underline">
