@@ -87,7 +87,9 @@ export async function getSession(): Promise<Session | null> {
 
   return {
     staffId: parsed.staffId,
-    name: row.name,
+    name: row.role === "owner" && row.email === "owner@petcom.in"
+      ? process.env.STAFF_OWNER_DISPLAY_NAME?.trim() || row.name
+      : row.name,
     email: row.email,
     role: row.role as Role,
     exp: parsed.exp,
