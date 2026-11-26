@@ -71,7 +71,7 @@ export async function POST(request: Request) {
   }
   const rowId = inserted[0].id;
 
-  if (type !== "payment.captured" && type !== "payment.authorized") {
+  if (type !== "payment.captured") {
     // Nothing to do yet — order.paid arrives with its own payment.captured.
     await db
       .update(webhookEvents)
